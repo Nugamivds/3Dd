@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soto Calcos - Gestión 3D</title>
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --naranja: #ff7300; --naranja-claro:#ff9d00;
+            --rosa:#ff3d81; --violeta:#8b5cf6; --azul:#3b82f6;
+            --verde:#10b981; --rojo:#ef4444;
+            --bg:#0b1020; --card:#16213e; --borde:#263560;
+            --texto:#f5f7ff; --texto2:#9fb0d8;
+        }
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            background: linear-gradient(135deg, #0b1020 0%, #1a0b2e 50%, #0b1020 100%);
+            color: var(--texto); margin:0; padding:18px; padding-bottom:60px; min-height:100vh;
+        }
+        .header { 
+            display:flex; justify-content:space-between; align-items:center; 
+            margin-bottom:22px;
+            background: linear-gradient(90deg, var(--naranja), var(--rosa), var(--violeta));
+            padding:18px 22px; border-radius:18px;
+            box-shadow:0 10px 30px -8px rgba(255,115,0,.55);
+        }
+        .header h2{margin:0;font-size:22px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.35)}
+        .gear{cursor:pointer;font-size:28px;transition:.35s}
+        .gear:hover{transform:rotate(60deg) scale(1.1)}
+        .modal{
+            display:none;
+            background:linear-gradient(180deg,#1a2550,#121a38);
+            padding:22px;border-radius:16px;margin-bottom:20px;
+            border:1px solid #2a3a72;
+            box-shadow:0 15px 40px rgba(0,0,0,.45);
+            animation:aparecer .3s ease;
+        }
+        @keyframes aparecer{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+        .card{
+            background:linear-gradient(180deg,rgba(22,33,62,.95),rgba(18,26,56,.85));
+            backdrop-filter:blur(6px);
+            padding:22px;border-radius:16px;margin-bottom:20px;
+            border:1px solid var(--borde);
+            box-shadow:0 8px 24px rgba(0,0,0,.35);
+            transition:.25s;
+        }
+        .card:hover{transform:translateY(-2px)}
+        .card h3{
+            margin:0 0 16px;font-size:18px;
+            background:linear-gradient(90deg,var(--naranja-claro),#ffb347);
+            -webkit-background-clip:text;background-clip:text;color:transparent;
+            border-bottom:1px solid #263560;padding-bottom:10px;
+        }
+        label{display:block;margin-bottom:6px;color:var(--texto2);font-size:13px;font-weight:600}
+        input{
+            width:100%;padding:13px 14px;margin-bottom:14px;
+            background:#0b1228;color:#fff;border:1px solid #263560;border-radius:10px;font-size:15px;
+            transition:.2s;
+        }
+        input:focus{outline:none;border-color:var(--naranja);box-shadow:0 0 0 3px rgba(255,115,0,.18)}
+        button{
+            width:100%;padding:13px;border:none;border-radius:10px;
+            font-size:15px;font-weight:700;color:#fff;cursor:pointer;transition:.2s;
+        }
+        button:active{transform:scale(.97)}
+        .btn-primary{background:linear-gradient(90deg,var(--naranja),var(--naranja-claro));box-shadow:0 6px 18px -5px rgba(255,115,0,.6)}
+        .btn-success{background:linear-gradient(90deg,#05b67a,#22d3a1);box-shadow:0 6px 18px -5px rgba(16,185,129,.55);margin-top:14px}
+        .btn-gray{background:linear-gradient(90deg,#475569,#64748b);margin-top:10px}
+        .btn-edit{background:#243059;border:1px solid #33437a;font-size:12px;padding:7px}
+        .btn-del{background:rgba(239,68,68,.12);border:1px solid #ef4444;color:#ffb4b4;font-size:12px;padding:7px}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .wallet{
+            padding:16px 10px;border-radius:14px;text-align:center;color:#fff;
+            position:relative;overflow:hidden;transition:.25s;
+            box-shadow:0 8px 20px -6px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.18);
+        }
+        .wallet:hover{transform:translateY(-3px) scale(1.015)}
+        .wallet::before{content:"";position:absolute;inset:0;opacity:.92;z-index:0}
+        .wallet > *{position:relative;z-index:1}
+        .w-fil::before{background:linear-gradient(135deg,#ff7300,#ffb347)}
+        .w-ene::before{background:linear-gradient(135deg,#3b82f6,#60a5fa)}
+        .w-gan::before{background:linear-gradient(135deg,#10b981,#34d399)}
+        .w-maq::before{background:linear-gradient(135deg,#8b5cf6,#a78bfa)}
+        .wallet h4{margin:0 0 6px;font-size:11px;letter-spacing:1px;opacity:.95;text-transform:uppercase}
+        .wallet p{margin:0;font-size:22px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,.25)}
+        .wallet button{margin-top:8px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.25)}
+        .total-carteras{
+            grid-column:1/-1;
+            padding:16px;border-radius:14px;text-align:center;color:#fff;
+            position:relative;overflow:hidden;margin-top:4px;
+            box-shadow:0 10px 24px -6px rgba(255,115,0,.45),inset 0 1px 0 rgba(255,255,255,.2);
+        }
+        .total-carteras::before{
+            content:"";position:absolute;inset:0;z-index:0;
+            background:linear-gradient(135deg,#ff7300,#ff3d81,#8b5cf6,#3b82f6);
+            background-size:250% 250%;
+            animation:arcoiris 6s ease infinite;opacity:.95;
+        }
+        .total-carteras > *{position:relative;z-index:1}
+        .total-carteras h4{margin:0 0 4px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase}
+        .total-carteras p{margin:0;font-size:26px;font-weight:900;text-shadow:0 2px 6px rgba(0,0,0,.35)}
+        @keyframes arcoiris{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+        #resultado{margin-top:18px;background:#0b1228;padding:16px;border-radius:12px;border:1px solid #263560;display:none;animation:aparecer .3s ease}
+        #resultado h4{margin:0 0 12px;color:var(--naranja-claro);font-size:16px}
+        .desglose-item{display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px dashed #223058;font-size:14px}
+        .desglose-item:last-child{border:none}
+        .dg{color:var(--verde);font-weight:800}
+        .dm{color:#c4a8ff}
+        .total-final{
+            display:flex;justify-content:space-between;align-items:center;
+            font-size:22px;font-weight:900;
+            padding:12px 6px;margin-top:10px;border-top:2px solid #263560;
+            background:linear-gradient(90deg,rgba(255,115,0,.12),rgba(139,92,246,.12));
+            border-radius:6px;color:#ffb347;
+        }
+        .precio-editable{margin-top:12px;padding:10px 12px;border:1.5px dashed var(--naranja);border-radius:10px;background:rgba(255,115,0,.06)}
+        .precio-editable input{margin:6px 0 0 !important;font-size:20px !important;font-weight:900;text-align:center;color:#ffb347 !important}
+        .dif{font-size:11.5px;text-align:center;margin-top:4px;color:#9fb0d8}
+        .dif.positivo{color:#34d399}
+        .dif.negativo{color:#ff8a8a}
+        .venta-item{
+            background:linear-gradient(90deg,#111a38,#16213e);
+            padding:14px;border-radius:10px;margin-bottom:12px;border:1px solid #263560;
+            border-left:5px solid;border-image:linear-gradient(180deg,#ff7300,#ff3d81) 1;
+        }
+        .venta-info-container{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+        .venta-info h4{margin:0 0 3px}
+        .venta-info p{margin:0;color:var(--texto2);font-size:12px}
+        .venta-precio{font-size:19px;font-weight:900;color:var(--verde)}
+        .venta-acciones{display:flex;gap:8px}
+        .empty{text-align:center;color:var(--texto2);padding:22px 0;font-size:13px}
+    </style>
+</head>
+<body>
+
+    <div class="header"><h2>🔥 Soto Calcos 3D</h2><div class="gear" onclick="toggleConfig()">⚙️</div></div>
+
+    <div id="configuracion" class="modal">
+        <h3>Ajustes de Precios</h3>
+        <label>Precio Filamento x Kg:</label><input type="number" id="cfgFilamento">
+        <label>Costo Energía x Hora:</label><input type="number" id="cfgEnergia">
+        <label>Insumos Extra Fijos:</label><input type="number" id="cfgExtra">
+        <label>Margen Ganancia %:</label><input type="number" id="cfgGanancia">
+        <label>% Fondo Máquina:</label><input type="number" id="cfgFondoMaquina">
+        <button class="btn-primary" onclick="guardarConfig()">💾 Guardar</button>
+        <button class="btn-gray" onclick="toggleConfig()">Ocultar</button>
+    </div>
+
+    <div id="modalEditarCartera" class="modal">
+        <h3>✏️ Modificar Fondo</h3>
+        <input type="number" id="inpNuevoMontoCartera" step="0.01">
+        <input type="hidden" id="carteraOculta">
+        <button class="btn-success" onclick="guardarEdicionCartera()">Actualizar</button>
+        <button class="btn-gray" onclick="cerrarEdicionCartera()">Cancelar</button>
+    </div>
+
+    <div id="modalEditarVenta" class="modal">
+        <h3>✏️ Editar Venta</h3>
+        <label>Cliente:</label><input type="text" id="inpEditVentaCliente">
+        <label>Monto cobrado:</label><input type="number" id="inpEditVentaMonto" step="0.01">
+        <label>Fecha:</label><input type="text" id="inpEditVentaFecha">
+        <input type="hidden" id="i"><input type="hidden" id="oF"><input type="hidden" id="oE"><input type="hidden" id="oM"><input type="hidden" id="oG">
+        <button class="btn-success" onclick="guardarEdicionVenta()">Guardar</button>
+        <button class="btn-gray" onclick="cerrarEdicionVenta()">Cancelar</button>
+    </div>
+
+    <div class="card">
+        <h3>💰 Tus Fondos</h3>
+        <div class="grid">
+            <div class="wallet w-fil"><h4>🧵 FILAMENTOS</h4><p>$<span id="wF">0.00</span></p><button class="btn-edit" onclick="abrirEditar('filamentos')">Modificar</button></div>
+            <div class="wallet w-ene"><h4>⚡ ENERGÍA</h4><p>$<span id="wE">0.00</span></p><button class="btn-edit" onclick="abrirEditar('energia')">Modificar</button></div>
+            <div class="wallet w-gan"><h4>💸 GANANCIA LIBRE</h4><p>$<span id="wG">0.00</span></p><button class="btn-edit" onclick="abrirEditar('ganancia')">Modificar</button></div>
+            <div class="wallet w-maq"><h4>🔧 FONDO MÁQUINA</h4><p>$<span id="wM">0.00</span></p><button class="btn-edit" onclick="abrirEditar('maquina')">Modificar</button></div>
+            <div class="total-carteras"><h4>💎 TOTAL EN CAJA</h4><p>$<span id="T">0.00</span></p></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>🧾 Cotizar y Vender</h3>
+        <label>Cliente:</label><input id="cli" placeholder="Ej: Grinder - Juan">
+        <label>Gramos filamento:</label><input id="gr" type="number" placeholder="Ej: 200">
+        <label>Horas:</label><input id="hr" type="number" step="0.1" placeholder="Ej: 10">
+        <button class="btn-primary" onclick="calcular()">📊 Generar Desglose</button>
+
+        <div id="resultado">
+            <h4>Desglose</h4>
+            <div class="desglose-item"><span>🧵 Filamento:</span>$<span id="dF">0</span></div>
+            <div class="desglose-item"><span>⚡ Energía:</span>$<span id="dE">0</span></div>
+            <div class="desglose-item"><span>🧴 Insumos:</span>$<span id="dI">0</span></div>
+            <div class="desglose-item dm"><span>🔧 Máquina:</span>$<span id="dM">0</span></div>
+            <div class="desglose-item dg"><span>💸 Ganancia:</span>$<span id="dG">0</span></div>
+            <div class="total-final"><span>Total calculado:</span>$<span id="dT">0</span></div>
+            <div class="precio-editable">
+                <label>✏️ PRECIO FINAL REAL A COBRAR:</label>
+                <input id="pFinal" type="number" step="0.01" oninput="recalc()">
+                <div class="dif" id="dif"></div>
+            </div>
+            <button class="btn-success" onclick="guardarVenta()">✅ Aprobar y Registrar</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📋 Historial de Ventas</h3>
+        <div id="lista"><div class="empty">Sin ventas todavía ✨</div></div>
+    </div>
+
+<script>
+    // ⚙️ CONFIG
+    let cfg = { filamento:25000, energia:150, extra:300, ganancia:200, maq:20 };
+    let carteras = { filamentos:0, energia:0, ganancia:0, maquina:0 };
+    let ventas = [];
+    let tmp = null; // datos temporales del cálculo
+
+    // 📂 CARGAR / GUARDAR
+    function cargar(){
+        const a=localStorage.getItem('sc3d_a'),b=localStorage.getItem('sc3d_b'),c=localStorage.getItem('sc3d_c');
+        if(a)cfg=JSON.parse(a);if(b)carteras=JSON.parse(b);if(c)ventas=JSON.parse(c);
+        document.getElementById('cfgFilamento').value=cfg.filamento;
+        document.getElementById('cfgEnergia').value=cfg.energia;
+        document.getElementById('cfgExtra').value=cfg.extra;
+        document.getElementById('cfgGanancia').value=cfg.ganancia;
+        document.getElementById('cfgFondoMaquina').value=cfg.maq;
+        refresh();
+    }
+    function save(){
+        localStorage.setItem('sc3d_a',JSON.stringify(cfg));
+        localStorage.setItem('sc3d_b',JSON.stringify(carteras));
+        localStorage.setItem('sc3d_c',JSON.stringify(ventas));
+        refresh();
+    }
+    function refresh(){
+        document.getElementById('wF').textContent = carteras.filamentos.toFixed(2);
+        document.getElementById('wE').textContent = carteras.energia.toFixed(2);
+        document.getElementById('wG').textContent = carteras.ganancia.toFixed(2);
+        document.getElementById('wM').textContent = carteras.maquina.toFixed(2);
+        // ✅ SUMA EXACTA
+        const T = carteras.filamentos + carteras.energia + carteras.ganancia + carteras.maquina;
+        document.getElementById('T').textContent = T.toFixed(2);
+        render();
+    }
+
+    function toggleConfig(){const m=document.getElementById('configuracion');m.style.display=m.style.display==='block'?'none':'block'}
+    function guardarConfig(){
+        cfg.filamento=+document.getElementById('cfgFilamento').value||0;
+        cfg.energia=+document.getElementById('cfgEnergia').value||0;
+        cfg.extra=+document.getElementById('cfgExtra').value||0;
+        cfg.ganancia=+document.getElementById('cfgGanancia').value||0;
+        cfg.maq=+document.getElementById('cfgFondoMaquina').value||0;
+        save();toggleConfig();
+    }
+
+    function abrirEditar(id){
+        document.getElementById('inpNuevoMontoCartera').value=carteras[id].toFixed(2);
+        document.getElementById('carteraOculta').value=id;
+        document.getElementById('modalEditarCartera').style.display='block';
+    }
+    function cerrarEdicionCartera(){document.getElementById('modalEditarCartera').style.display='none'}
+    function guardarEdicionCartera(){
+        const id=document.getElementById('carteraOculta').value;
+        const v=+document.getElementById('inpNuevoMontoCartera').value;
+        if(!isNaN(v)){carteras[id]=v;save();cerrarEdicionCartera()}
+    }
+
+    // ✏️ EDITAR VENTA → ACTUALIZA CARTERAS EXACTO
+    function abrirEditarVenta(i){
+        const v=ventas[i];
+        document.getElementById('inpEditVentaCliente').value=v.cli;
+        document.getElementById('inpEditVentaMonto').value=v.monto;
+        document.getElementById('inpEditVentaFecha').value=v.f;
+        document.getElementById('i').value=i;
+        document.getElementById('oF').value=v.s.f;
+        document.getElementById('oE').value=v.s.e;
+        document.getElementById('oM').value=v.s.m;
+        document.getElementById('oG').value=v.s.g;
+        document.getElementById('modalEditarVenta').style.display='block';
+    }
+    function cerrarEdicionVenta(){document.getElementById('modalEditarVenta').style.display='none'}
+    function guardarEdicionVenta(){
+        const i=+document.getElementById('i').value;
+        const nuevo=+document.getElementById('inpEditVentaMonto').value;
+        if(!nuevo||nuevo<=0)return alert('Monto inválido');
+        const oF=+document.getElementById('oF').value,oE=+document.getElementById('oE').value;
+        const oM=+document.getElementById('oM').value,oG=+document.getElementById('oG').value;
+        const viejo = oF+oE+oM+oG;
+
+        // 1) BORRO ANTES
+        carteras.filamentos=+(carteras.filamentos-oF).toFixed(2);
+        carteras.energia=+(carteras.energia-oE).toFixed(2);
+        carteras.maquina=+(carteras.maquina-oM).toFixed(2);
+        carteras.ganancia=+(carteras.ganancia-oG).toFixed(2);
+
+        // 2) NUEVO PROPORCIONAL EXACTO
+        const k = nuevo/viejo;
+        const nF=+(oF*k).toFixed(2),nE=+(oE*k).toFixed(2);
+        const nM=+(oM*k).toFixed(2);
+        // ✅ AJUSTE MÁGICO: el residuo por redondeo se lo metemos a ganancia → SUMA EXACTA
+        let nG=+(oG*k).toFixed(2);
+        const dif = +(nuevo - (nF+nE+nM+nG)).toFixed(2);
+        nG = +(nG + dif).toFixed(2); // GARANTIZA nF+nE+nM+nG === nuevo
+
+        // 3) SUMO
+        carteras.filamentos=+(carteras.filamentos+nF).toFixed(2);
+        carteras.energia=+(carteras.energia+nE).toFixed(2);
+        carteras.maquina=+(carteras.maquina+nM).toFixed(2);
+        carteras.ganancia=+(carteras.ganancia+nG).toFixed(2);
+
+        ventas[i].cli=document.getElementById('inpEditVentaCliente').value;
+        ventas[i].f=document.getElementById('inpEditVentaFecha').value;
+        ventas[i].monto=nuevo;
+        ventas[i].s={f:nF,e:nE,m:nM,g:nG};
+        save();cerrarEdicionVenta();
+    }
+
+    // 🗑️ BORRAR → RESTA EXACTO
+    function borrar(i){
+        if(!confirm('⚠️ Se resta TODO de las 4 carteras. ¿Seguro?'))return;
+        const v=ventas[i];
+        carteras.filamentos=+(carteras.filamentos - v.s.f).toFixed(2);
+        carteras.energia=+(carteras.energia    - v.s.e).toFixed(2);
+        carteras.maquina=+(carteras.maquina    - v.s.m).toFixed(2);
+        carteras.ganancia=+(carteras.ganancia   - v.s.g).toFixed(2);
+        ventas.splice(i,1);
+        save();
+    }
+
+    // 🧮 CALCULAR BASE
+    function calcular(){
+        const cli=document.getElementById('cli').value.trim();
+        const gr=+document.getElementById('gr').value,hr=+document.getElementById('hr').value;
+        if(!cli)return alert('Ingresá cliente');if(!gr||!hr)return alert('Ingresá gramos y horas');
+
+        const F = +((cfg.filamento/1000)*gr).toFixed(2);
+        const E = +(cfg.energia*hr).toFixed(2);
+        const I = +cfg.extra;
+        const CD = F+E+I;
+        const M = +(CD * cfg.maq/100).toFixed(2);
+        const CT = CD+M;
+        // ✅ GANANCIA = margen sobre costo total
+        const Gbruto = +(CT * cfg.ganancia/100).toFixed(2);
+        // ✅ INSUMOS SE SUMAN UNA SOLA VEZ A GANANCIA, Y NUNCA MÁS
+        const Gneta = +(Gbruto + I).toFixed(2);
+        const Tbase = +(F+E+M+Gneta).toFixed(2);
+
+        tmp = {cli,F,E,I,M,G:Gneta,T:Tbase};
+
+        document.getElementById('dF').textContent=F.toFixed(2);
+        document.getElementById('dE').textContent=E.toFixed(2);
+        document.getElementById('dI').textContent=I.toFixed(2);
+        document.getElementById('dM').textContent=M.toFixed(2);
+        document.getElementById('dG').textContent=Gneta.toFixed(2);
+        document.getElementById('dT').textContent=Tbase.toFixed(2);
+        document.getElementById('pFinal').value=Tbase.toFixed(2);
+        document.getElementById('dif').textContent='';
+        document.getElementById('resultado').style.display='block';
+    }
+
+    // ✏️ RECÁLCULO MANUAL - EL PUNTO CLAVE ARREGLADO
+    function recalc(){
+        if(!tmp)return;
+        const P = +document.getElementById('pFinal').value||0;
+        if(P<=0)return;
+        const k = P / tmp.T;
+        let nF=+(tmp.F*k).toFixed(2);
+        let nE=+(tmp.E*k).toFixed(2);
+        let nM=+(tmp.M*k).toFixed(2);
+        let nG=+(tmp.G*k).toFixed(2);
+
+        // ✅ AJUSTE DE REDONDEO: LO QUE SOBRE O FALTA VA SOLO A GANANCIA
+        const dif = +(P - (nF+nE+nM+nG)).toFixed(2);
+        nG = +(nG + dif).toFixed(2);
+        // AHORA SÍ O SÍ: nF+nE+nM+nG = P EXACTO
+
+        document.getElementById('dM').textContent=nM.toFixed(2);
+        document.getElementById('dG').textContent=nG.toFixed(2);
+
+        tmp.Fn=nF; tmp.En=nE; tmp.Mn=nM; tmp.Gn=nG; tmp.Pn=P;
+
+        const porc=+(((P-tmp.T)/tmp.T)*100).toFixed(1);
+        const d=document.getElementById('dif');
+        if(porc===0)d.textContent='';
+        else if(porc>0){d.textContent=`▲ +${porc}%`;d.className='dif positivo'}
+        else{d.textContent=`▼ ${porc}%`;d.className='dif negativo'}
+    }
+
+    // ✅ GUARDAR VENTA - REPARTO 100% EXACTO
+    function guardarVenta(){
+        if(!tmp)return;
+        recalc();
+        const F=tmp.Fn??tmp.F, E=tmp.En??tmp.E, M=tmp.Mn??tmp.M, G=tmp.Gn??tmp.G, P=tmp.Pn??tmp.T;
+
+        // SUMA DE CONTROL (SIEMPRE DA 0.00)
+        console.log('Control:', +(P - (F+E+M+G)).toFixed(2));
+
+        carteras.filamentos = +(carteras.filamentos + F).toFixed(2);
+        carteras.energia    = +(carteras.energia    + E).toFixed(2);
+        carteras.maquina    = +(carteras.maquina    + M).toFixed(2);
+        carteras.ganancia   = +(carteras.ganancia   + G).toFixed(2);
+
+        ventas.unshift({
+            f:new Date().toLocaleDateString('es-AR'),
+            cli:tmp.cli,
+            monto:P,
+            s:{f:F,e:E,m:M,g:G}
+        });
+
+        save();
+        document.getElementById('cli').value='';
+        document.getElementById('gr').value='';
+        document.getElementById('hr').value='';
+        document.getElementById('resultado').style.display='none';
+        tmp=null;
+    }
+
+    function render(){
+        const c=document.getElementById('lista');
+        if(!ventas.length){c.innerHTML='<div class="empty">Sin ventas todavía ✨</div>';return}
+        c.innerHTML=ventas.map((v,i)=>`
+            <div class="venta-item">
+                <div class="venta-info-container">
+                    <div class="venta-info"><h4>${v.cli}</h4><p>📅 ${v.f}</p></div>
+                    <div class="venta-precio">$${v.monto.toFixed(2)}</div>
+                </div>
+                <div class="venta-acciones">
+                    <button class="btn-edit" onclick="abrirEditarVenta(${i})">✏️ Editar</button>
+                    <button class="btn-del" onclick="borrar(${i})">🗑️ Borrar</button>
+                </div>
+            </div>`).join('');
+    }
+
+    window.onload=cargar;
+</script>
+</body>
+</html>
